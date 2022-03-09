@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "e8d4f661-ec2e-471f-b3e3-9123c7a1f17c": {
+      "ProjectGuid": "e8d4f661-ec2e-471f-b3e3-9123c7a1f17c",
+      "DisplayName": "FBX_ImportScene",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}

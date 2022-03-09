@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -116,14 +116,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Computer graphics\压缩包\FBX\FBX SDK\2019.0\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Computer graphics\Package\FBX\FBX SDK\2019.0\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>E:\Computer graphics\压缩包\FBX\FBX SDK\2019.0\lib\vs2015\x64\debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>E:\Computer graphics\Package\FBX\FBX SDK\2019.0\lib\vs2015\x64\debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>libfbxsdk.lib;libfbxsdk-md.lib;libfbxsdk-mt.lib;wininet.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -134,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>E:\Computer graphics\压缩包\FBX\FBX SDK\2019.0\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\Computer graphics\Package\FBX\FBX SDK\2019.0\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -142,15 +145,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>E:\Computer graphics\压缩包\FBX\FBX SDK\2019.0\lib\vs2015\x64\debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>E:\Computer graphics\Package\FBX\FBX SDK\2019.0\lib\vs2015\x64\debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>libfbxsdk.lib;libfbxsdk-md.lib;libfbxsdk-mt.lib;wininet.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Fbx_ImportScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ImportExport.h" />
+    <ClInclude Include="FbxImporter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
