@@ -5,7 +5,12 @@
       "ProjectGuid": "e8d4f661-ec2e-471f-b3e3-9123c7a1f17c",
       "DisplayName": "FBX_ImportScene",
       "ColorIndex": 0
+    },
+    "9fe80766-0f65-4397-944e-5f87ea64709e": {
+      "ProjectGuid": "9fe80766-0f65-4397-944e-5f87ea64709e",
+      "DisplayName": "Fbx_ImportScene",
+      "ColorIndex": 1
     }
   },
-  "NextColorIndex": 1
+  "NextColorIndex": 2
 }

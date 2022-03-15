@@ -1,9 +1,2 @@
 ﻿  Fbx_ImportScene.cpp
-E:\Computer graphics\Practice\Fbx_ImportScene\Fbx_ImportScene.cpp(615,12): warning C4101: “k”: 未引用的局部变量
-E:\Computer graphics\Practice\Fbx_ImportScene\Fbx_ImportScene.cpp(615,9): warning C4101: “j”: 未引用的局部变量
-  正在生成代码
-  7 of 202 functions ( 3.5%) were compiled, the rest were copied from previous compilation.
-    2 functions were new in current compilation
-    23 functions had inline decision re-evaluated but remain unchanged
-  已完成代码的生成
-  Fbx_ImportScene.vcxproj -> E:\Computer graphics\Practice\Fbx_ImportScene\x64\Release\Fbx_ImportScene.exe
+D:\Computer graphics\Practice\Fbx_ImportScene\Fbx_ImportScene.cpp(1,9): fatal error C1083: 无法打开包括文件: “fbxsdk.h”: No such file or directory
