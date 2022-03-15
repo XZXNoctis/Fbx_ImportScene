@@ -17,8 +17,9 @@ void DisplayContent(FbxNode* pNode);
 
 void DisplayMesh(FbxNode* pNode);
 void DisplayControlsPoints(FbxMesh* pMesh);
+void DisplayMaterialMapping(FbxMesh* pMesh);
 void DisplayPolygons(FbxMesh* pMesh);
-//void DisplayMetaDataConnections(FbxObject* pNode);
+void DisplayLink(FbxGeometry* pGeometry);
 
 void DisplayPose(FbxScene* pScene);
 
@@ -33,7 +34,10 @@ void DisplayListCurveKeys(FbxAnimCurve* pCurve, FbxProperty* pProperty);
 void DisplayGenericInfo(FbxScene* pScene);
 void DisplayGenericInfo(FbxNode* pNode, int pDepth);
 void DisplayProperties(FbxObject* pObject);
+
+void DisplaySkeleton(FbxNode* pNode);
 //For Common
+void DisplayMetaDataConnections(FbxObject* pNode);
 void DisplayString(const char* pHeader, const char* pValue = "", const char* pSuffix = "");
 void Display3DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix = "");
 void DisplayInt(const char* pHeader, int pValue, const char* pSuffix = "");
@@ -222,6 +226,9 @@ void DisplayContent(FbxNode* pNode) {
 		switch (lAttributeType) {
 		default:
 			break;
+		case FbxNodeAttribute::eSkeleton:
+			DisplaySkeleton(pNode);
+			break;
 		case FbxNodeAttribute::eMesh:
 			DisplayMesh(pNode);
 			break;
@@ -242,14 +249,180 @@ void DisplayMesh(FbxNode* pNode) {
 	FbxMesh* lMesh = (FbxMesh*)pNode->GetNodeAttribute();
 
 	DisplayString("Mesh Name: ", (char*)pNode->GetName());
-	//DisplayMetaDataConnections(lMesh);
+	DisplayMetaDataConnections(lMesh);
 	DisplayControlsPoints(lMesh);
 	DisplayPolygons(lMesh);
+	DisplayMaterialMapping(lMesh);
+	DisplayLink(lMesh);
 
 }
-void DisplayMetaDataConnections(FbxMesh* pMesh) {
+//For Skeleton
+void DisplaySkeleton(FbxNode* pNode) {
+	FbxSkeleton* lSkeleton = (FbxSkeleton*)pNode->GetNodeAttribute();
+	DisplayString("Skeleton Name: ", (char*)pNode->GetName());
+	DisplayMetaDataConnections(lSkeleton);
+
+	const char* lSkeletonTypes[] = { "Root", "Limb", "Limb Node", "Effector" };
+
+	DisplayString("    Type: ", lSkeletonTypes[lSkeleton->GetSkeletonType()]);
+
+	if (lSkeleton->GetSkeletonType() == FbxSkeleton::eLimb)
+	{
+		DisplayDouble("    Limb Length: ", lSkeleton->LimbLength.Get());
+	}
+	else if (lSkeleton->GetSkeletonType() == FbxSkeleton::eLimbNode)
+	{
+		DisplayDouble("    Limb Node Size: ", lSkeleton->Size.Get());
+	}
+	else if (lSkeleton->GetSkeletonType() == FbxSkeleton::eRoot)
+	{
+		DisplayDouble("    Limb Root Size: ", lSkeleton->Size.Get());
+	}
+
+	DisplayColor("    Color: ", lSkeleton->GetLimbNodeColor());
+}
+
+void DisplayMaterialMapping(FbxMesh* pMesh)
+{
+	const char* lMappingTypes[] = { "None", "By Control Point", "By Polygon Vertex", "By Polygon", "By Edge", "All Same" };
+	const char* lReferenceMode[] = { "Direct", "Index", "Index to Direct" };
+
+	int lMtrlCount = 0;
+	FbxNode* lNode = NULL;
+	if (pMesh) {
+		lNode = pMesh->GetNode();
+		if (lNode)
+			lMtrlCount = lNode->GetMaterialCount();
+	}
+
+	for (int l = 0; l < pMesh->GetElementMaterialCount(); l++)
+	{
+		FbxGeometryElementMaterial* leMat = pMesh->GetElementMaterial(l);
+		if (leMat)
+		{
+			char header[100];
+			FBXSDK_sprintf(header, 100, "    Material Element %d: ", l);
+			DisplayString(header);
+
+
+			DisplayString("           Mapping: ", lMappingTypes[leMat->GetMappingMode()]);
+			DisplayString("           ReferenceMode: ", lReferenceMode[leMat->GetReferenceMode()]);
+
+			int lMaterialCount = 0;
+			FbxString lString;
+
+			if (leMat->GetReferenceMode() == FbxGeometryElement::eDirect ||
+				leMat->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+			{
+				lMaterialCount = lMtrlCount;
+			}
+
+			if (leMat->GetReferenceMode() == FbxGeometryElement::eIndex ||
+				leMat->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+			{
+				int i;
+
+				lString = "           Indices: ";
+
+				int lIndexArrayCount = leMat->GetIndexArray().GetCount();
+				for (i = 0; i < lIndexArrayCount; i++)
+				{
+					lString += leMat->GetIndexArray().GetAt(i);
+
+					if (i < lIndexArrayCount - 1)
+					{
+						lString += ", ";
+					}
+				}
+
+				lString += "\n";
+
+				FBXSDK_printf(lString);
+			}
+		}
+	}
+
+	DisplayString("");
+}
+
+void DisplayLink(FbxGeometry* pGeometry) {
+	int i, j;
+	int lSkinCount = 0;
+	int lClusterCount = 0;
+	FbxCluster* lCluster;
+
+	lSkinCount = pGeometry->GetDeformerCount(FbxDeformer::eSkin);
+
+	for (i = 0; i != lSkinCount; ++i) {
+		for (j = 0; j != lClusterCount; ++j)
+		{
+			DisplayInt("    Cluster ", i);
+
+			lCluster = ((FbxSkin*)pGeometry->GetDeformer(i, FbxDeformer::eSkin))->GetCluster(j);  
+
+			const char* lClusterModes[] = { "Normalize", "Additive", "Total1" };
+
+			DisplayString("    Mode: ", lClusterModes[lCluster->GetLinkMode()]);
+
+			if (lCluster->GetLink() != NULL)
+			{
+				DisplayString("        Name: ", (char*)lCluster->GetLink()->GetName());
+			}
+
+			FbxString lString1 = "        Link Indices: ";
+			FbxString lString2 = "        Weight Values: ";
+
+			int k, lIndexCount = lCluster->GetControlPointIndicesCount();
+			int* lIndices = lCluster->GetControlPointIndices();
+			double* lWeights = lCluster->GetControlPointWeights();
+
+			for (k = 0; k < lIndexCount; k++)
+			{
+				lString1 += lIndices[k];
+				lString2 += (float)lWeights[k];
+
+				if (k < lIndexCount - 1)
+				{
+					lString1 += ", ";
+					lString2 += ", ";
+				}
+			}
+
+			lString1 += "\n";
+			lString2 += "\n";
+
+			FBXSDK_printf(lString1);
+			FBXSDK_printf(lString2);
+
+			DisplayString("");
+
+			FbxAMatrix lMatrix;
+
+			lMatrix = lCluster->GetTransformMatrix(lMatrix);
+			Display3DVector("        Transform Translation: ", lMatrix.GetT());
+			Display3DVector("        Transform Rotation: ", lMatrix.GetR());
+			Display3DVector("        Transform Scaling: ", lMatrix.GetS());
+
+			lMatrix = lCluster->GetTransformLinkMatrix(lMatrix);
+			Display3DVector("        Transform Link Translation: ", lMatrix.GetT());
+			Display3DVector("        Transform Link Rotation: ", lMatrix.GetR());
+			Display3DVector("        Transform Link Scaling: ", lMatrix.GetS());
+
+			if (lCluster->GetAssociateModel() != NULL)
+			{
+				lMatrix = lCluster->GetTransformAssociateModelMatrix(lMatrix);
+				DisplayString("        Associate Model: ", (char*)lCluster->GetAssociateModel()->GetName());
+				Display3DVector("        Associate Model Translation: ", lMatrix.GetT());
+				Display3DVector("        Associate Model Rotation: ", lMatrix.GetR());
+				Display3DVector("        Associate Model Scaling: ", lMatrix.GetS());
+			}
+
+			DisplayString("");
+		}
+	}
 
 }
+//For show on poly
 void DisplayPolygons(FbxMesh* pMesh) {
 	int i, j, lPolygonCount = pMesh->GetPolygonCount();
 	FbxVector4* lControlPoints = pMesh->GetControlPoints();
@@ -274,7 +447,6 @@ void DisplayPolygons(FbxMesh* pMesh) {
 					break;
 				}
 			default:
-				// any other mapping modes don't make sense
 				DisplayString("        \"unsupported group assignment\"");
 				break;
 			}
@@ -285,7 +457,7 @@ void DisplayPolygons(FbxMesh* pMesh) {
 		for (j = 0; j < lPolygonCount; j++) {
 			int lControlPointIndex = pMesh->GetPolygonVertex(i, j);
 
-			Display3DVector("		Coordinates: ", lControlPoints[lControlPointIndex]);
+			Display3DVector("	    Coordinates: ", lControlPoints[lControlPointIndex]);
 
 			for (l = 0; i < pMesh->GetElementVertexColorCount(); i++) {
 				FbxGeometryElementVertexColor* leVtxc = pMesh->GetElementVertexColor(l);
@@ -337,14 +509,106 @@ void DisplayPolygons(FbxMesh* pMesh) {
 					break;
 				}
 			}
-			for () {
+			for (l = 0; l < pMesh->GetElementNormalCount(); ++l)
+			{
+				FbxGeometryElementNormal* leNormal = pMesh->GetElementNormal(l);
+				FBXSDK_sprintf(header, 100, "            Normal: ");
+
+				if (leNormal->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
+					switch (leNormal->GetReferenceMode())
+					{
+					case FbxGeometryElement::eDirect:
+						Display3DVector(header, leNormal->GetDirectArray().GetAt(vertexId));
+						break;
+					case FbxGeometryElement::eIndexToDirect:
+					{
+						int id = leNormal->GetIndexArray().GetAt(vertexId);
+						Display3DVector(header, leNormal->GetDirectArray().GetAt(id));
+					}
+					break;
+					default:
+						break; // other reference modes not shown here!
+					}
+				}
 
 			}
+			for (l = 0; l < pMesh->GetElementTangentCount(); ++l)
+			{
+				FbxGeometryElementTangent* leTangent = pMesh->GetElementTangent(l);
+				FBXSDK_sprintf(header, 100, "            Tangent: ");
 
+				if (leTangent->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
+					switch (leTangent->GetReferenceMode())
+					{
+					case FbxGeometryElement::eDirect:
+						Display3DVector(header, leTangent->GetDirectArray().GetAt(vertexId));
+						break;
+					case FbxGeometryElement::eIndexToDirect:
+					{
+						int id = leTangent->GetIndexArray().GetAt(vertexId);
+						Display3DVector(header, leTangent->GetDirectArray().GetAt(id));
+					}
+					break;
+					default:
+						break; // other reference modes not shown here!
+					}
+				}
+
+			}			
+			for (l = 0; l < pMesh->GetElementBinormalCount(); ++l)
+			{
+
+				FbxGeometryElementBinormal* leBinormal = pMesh->GetElementBinormal(l);
+
+				FBXSDK_sprintf(header, 100, "            Binormal: ");
+				if (leBinormal->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
+					switch (leBinormal->GetReferenceMode())
+					{
+					case FbxGeometryElement::eDirect:
+						Display3DVector(header, leBinormal->GetDirectArray().GetAt(vertexId));
+						break;
+					case FbxGeometryElement::eIndexToDirect:
+					{
+						int id = leBinormal->GetIndexArray().GetAt(vertexId);
+						Display3DVector(header, leBinormal->GetDirectArray().GetAt(id));
+					}
+					break;
+					default:
+						break; // other reference modes not shown here!
+					}
+				}
+			}
+			vertexId++;
+
+		}// for polygonSize
+	} // for polygonCount
+
+	//check visibility for the edges of the mesh
+	for (int l = 0; l < pMesh->GetElementVisibilityCount(); ++l)
+	{
+		FbxGeometryElementVisibility* leVisibility = pMesh->GetElementVisibility(l);
+		FBXSDK_sprintf(header, 100, "    Edge Visibility : ");
+		DisplayString(header);
+		switch (leVisibility->GetMappingMode())
+		{
+		default:
+			break;
+			//should be eByEdge
+		case FbxGeometryElement::eByEdge:
+			//should be eDirect
+			for (j = 0; j != pMesh->GetMeshEdgeCount(); ++j)
+			{
+				DisplayInt("        Edge ", j);
+				DisplayBool("              Edge visibility: ", leVisibility->GetDirectArray().GetAt(j));
+			}
+
+			break;
 		}
-
-
 	}
+	DisplayString("");
 }
 //Used in Pose(so How to use that)
 void DisplayPose(FbxScene* pScene) {
@@ -1061,6 +1325,17 @@ void DisplayControlsPoints(FbxMesh* pMesh) {
 
 
 //Common Used
+void DisplayMetaDataConnections(FbxObject* pObject) {
+	int nbMetaData = pObject->GetSrcObjectCount<FbxObjectMetaData>();
+	if (nbMetaData > 0)
+		DisplayString("    MetaData connections ");
+
+	for (int i = 0; i < nbMetaData; i++)
+	{
+		FbxObjectMetaData* metaData = pObject->GetSrcObject<FbxObjectMetaData>(i);
+		DisplayString("        Name: ", (char*)metaData->GetName());
+	}
+}
 //Show X,Y,Z
 void Display3DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix/* = "" */) {
 	FbxString lString;
