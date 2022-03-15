@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32126.317
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FBX_ImportScene", "FBX_ImportScene.vcxproj", "{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fbx_ImportScene", "Fbx_ImportScene.vcxproj", "{9FE80766-0F65-4397-944E-5F87EA64709E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,19 +13,19 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Debug|x64.ActiveCfg = Debug|x64
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Debug|x64.Build.0 = Debug|x64
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Debug|x86.ActiveCfg = Debug|Win32
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Debug|x86.Build.0 = Debug|Win32
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Release|x64.ActiveCfg = Release|x64
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Release|x64.Build.0 = Release|x64
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Release|x86.ActiveCfg = Release|Win32
-		{E8D4F661-EC2E-471F-B3E3-9123C7A1F17C}.Release|x86.Build.0 = Release|Win32
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Debug|x64.ActiveCfg = Debug|x64
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Debug|x64.Build.0 = Debug|x64
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Debug|x86.ActiveCfg = Debug|Win32
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Debug|x86.Build.0 = Debug|Win32
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Release|x64.ActiveCfg = Release|x64
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Release|x64.Build.0 = Release|x64
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Release|x86.ActiveCfg = Release|Win32
+		{9FE80766-0F65-4397-944E-5F87EA64709E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {11B6BAEE-2B44-4E72-9FA7-35182042E69C}
+		SolutionGuid = {C7D468E7-C509-496B-91F7-CF11DCF19182}
 	EndGlobalSection
 EndGlobal
