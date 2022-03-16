@@ -2,12 +2,18 @@
 #include<fbxsdk/fileio/fbxiosettings.h>
 #include<iostream>
 
+//Function include
+#include "Common.h"
+
+#define MAT_HEADER_LENGTH 200
+
 //Create Fbx Sdk Manager
 //FbxManager* lSdkManager = FbxManager::Create();
 //FbxScene* lScene = FbxScene::Create(lSdkManager, "lScne");
 
 //Function Definition
 void DisplayGlobalLightSettings(FbxGlobalSettings* pGlobalSettings);
+void DisplayGlobalCameraSettings(FbxGlobalSettings* pGlobalSettings);
 void DisplayGlobalTimeSettings(FbxGlobalSettings* pGlobalSettings);
 void DisplayHierarchy(FbxScene* pScene);
 void DisplayHierarchy(FbxNode* pNode, int pDepth);
@@ -23,12 +29,14 @@ void DisplayMaterial(FbxGeometry* pGeometry);
 //Used be in texture
 void DisplayTexture(FbxGeometry* pGeometry);
 void DisplayTextureInfo(FbxTexture* pTexture, int pBlendMode);
-//void FindAndDisplayTextureInfoByProperty(FbxProperty pProperty, bool& pDisplayHeader, int pMaterialIndex);
+void FindAndDisplayTextureInfoByProperty(FbxProperty pProperty, bool& pDisplayHeader, int pMaterialIndex);
 
 void DisplayMaterialConnection(FbxMesh* pMesh);
+void DisplayMaterialTextureConnections(FbxSurfaceMaterial* pMaterial,char* header, int pMatId, int l);
+void DisplayTextureNames(FbxProperty& pProperty, FbxString& pConnectionString);
 void DisplayLink(FbxGeometry* pGeometry);
-void DisplayShape(FbxMesh* pMesh);
-void DisplayCache(FbxMesh* pMesh);
+void DisplayShape(FbxGeometry* pGeometry);
+void DisplayCache(FbxGeometry* pGeometry);
 
 void DisplayPose(FbxScene* pScene);
 
@@ -45,16 +53,7 @@ void DisplayGenericInfo(FbxNode* pNode, int pDepth);
 void DisplayProperties(FbxObject* pObject);
 
 void DisplaySkeleton(FbxNode* pNode);
-//For Common
-void DisplayMetaDataConnections(FbxObject* pNode);
-void DisplayString(const char* pHeader, const char* pValue = "", const char* pSuffix = "");
-void Display2DVector(const char* pHeader, FbxVector2 pValue, const char* pSuffix = "");
-void Display3DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix = "");
-void Display4DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix = "");
-void DisplayInt(const char* pHeader, int pValue, const char* pSuffix = "");
-void DisplayDouble(const char* pHeader, double pValue, const char* pSuffix = "");
-void DisplayBool(const char* pHeader, bool pValue, const char* pSuffix = "");
-void DisplayColor(const char* pHeader, FbxColor pValue, const char* pSuffix = "");
+
 
 static bool gVerbose = true;
 
@@ -122,6 +121,10 @@ int main() {
 
 	if (gVerbose) DisplayGlobalLightSettings(&lScene->GetGlobalSettings());
 
+	FBXSDK_printf("\n\n----------------------\nGlobal Camera Settings\n----------------------\n\n");
+
+	if (gVerbose) DisplayGlobalCameraSettings(&lScene->GetGlobalSettings());
+
 	FBXSDK_printf("\n\n---------------------\nGlobal Time Settings\n---------------------\n\n");
 
 	if (gVerbose) DisplayGlobalTimeSettings(&lScene->GetGlobalSettings());
@@ -165,23 +168,7 @@ void DisplayMetaData(FbxScene* pScene) {
 		FBXSDK_printf("		Comment: %s\n", sceneInfo->mComment.Buffer());
 	}
 }
-//For know the scene time
 
-void DisplayGlobalTimeSettings(FbxGlobalSettings* pGlobalSettings) {
-	char lTimeString[256];
-
-	DisplayString("Time Mode : ", FbxGetTimeModeName(pGlobalSettings->GetTimeMode()));
-
-	FbxTimeSpan lTs;
-	FbxTime lStart, lEnd;
-	pGlobalSettings->GetTimelineDefaultTimeSpan(lTs);
-	lStart = lTs.GetStart();
-	lEnd = lTs.GetStop();
-	DisplayString("Timeline default timespan:");
-	DisplayString("		Start:", lStart.GetTimeString(lTimeString, FbxUShort(256)));
-	DisplayString("		End:", lEnd.GetTimeString(lTimeString, FbxUShort(256)));
-	DisplayString("	\n");
-}
 
 ////For Scene
 void DisplayHierarchy(FbxScene* pScene)
@@ -254,6 +241,28 @@ void DisplayContent(FbxNode* pNode) {
 void DisplayGlobalLightSettings(FbxGlobalSettings* pGlobalSettings) {
 	DisplayColor("Ambient Color:", pGlobalSettings->GetAmbientColor());
 }
+void DisplayGlobalCameraSettings(FbxGlobalSettings* pGlobalSettings)
+{
+	DisplayString("Default Camera: ", pGlobalSettings->GetDefaultCamera());
+}
+//For know the scene time
+
+void DisplayGlobalTimeSettings(FbxGlobalSettings* pGlobalSettings) {
+	char lTimeString[256];
+
+	DisplayString("Time Mode : ", FbxGetTimeModeName(pGlobalSettings->GetTimeMode()));
+
+	FbxTimeSpan lTs;
+	FbxTime lStart, lEnd;
+	pGlobalSettings->GetTimelineDefaultTimeSpan(lTs);
+	lStart = lTs.GetStart();
+	lEnd = lTs.GetStop();
+	DisplayString("Timeline default timespan:");
+	DisplayString("		Start:", lStart.GetTimeString(lTimeString, FbxUShort(256)));
+	DisplayString("		End:", lEnd.GetTimeString(lTimeString, FbxUShort(256)));
+	DisplayString("	\n");
+}
+
 //
 ////Used in DisplayMesh
 void DisplayMesh(FbxNode* pNode) {
@@ -265,7 +274,11 @@ void DisplayMesh(FbxNode* pNode) {
 	DisplayPolygons(lMesh);
 	DisplayMaterialMapping(lMesh);
 	DisplayMaterial(lMesh);
+	DisplayTexture(lMesh);
+	DisplayMaterialConnection(lMesh);
 	DisplayLink(lMesh);
+	DisplayShape(lMesh);
+	DisplayCache(lMesh);
 
 }
 //For Skeleton
@@ -373,72 +386,335 @@ void DisplayTexture(FbxGeometry* pGeometry) {
 			FBXSDK_FOR_EACH_TEXTURE(lTextureIndex)
 			{
 				lProperty = lMaterial->FindProperty(FbxLayerElement::sTextureChannelNames[lTextureIndex]);
-				//FindAndDisplayTextureInfoByProperty(lProperty, lDisplayHeader, lMaterialIndex);
+				FindAndDisplayTextureInfoByProperty(lProperty, lDisplayHeader, lMaterialIndex);
 			}
 
 		}//end if(lMaterial)
 
 	}// end for lMaterialIndex     
 }
-//void FindAndDisplayTextureInfoByProperty(FbxProperty pProperty, bool& pDisplayHeader, int pMaterialIndex) {
-//
-//	if (pProperty.IsValid())
-//	{
-//		int lTextureCount = pProperty.GetSrcObjectCount<FbxTexture>();
-//
-//		for (int j = 0; j < lTextureCount; ++j)
-//		{
-//			//Here we have to check if it's layeredtextures, or just textures:
-//			FbxLayeredTexture* lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
-//			if (lLayeredTexture)
-//			{
-//				DisplayInt("    Layered Texture: ", j);
-//				int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
-//				for (int k = 0; k < lNbTextures; ++k)
-//				{
-//					FbxTexture* lTexture = lLayeredTexture->GetSrcObject<FbxTexture>(k);
-//					if (lTexture)
-//					{
-//
-//						if (pDisplayHeader) {
-//							DisplayInt("    Textures connected to Material ", pMaterialIndex);
-//							pDisplayHeader = false;
-//						}
-//
-//						//NOTE the blend mode is ALWAYS on the LayeredTexture and NOT the one on the texture.
-//						//Why is that?  because one texture can be shared on different layered textures and might
-//						//have different blend modes.
-//
-//						FbxLayeredTexture::EBlendMode lBlendMode;
-//						lLayeredTexture->GetTextureBlendMode(k, lBlendMode);
-//						DisplayString("    Textures for ", pProperty.GetName());
-//						DisplayInt("        Texture ", k);
-//						DisplayTextureInfo(lTexture, (int)lBlendMode);
-//					}
-//
-//				}
-//			}
-//			else
-//			{
-//				//no layered texture simply get on the property
-//				FbxTexture* lTexture = pProperty.GetSrcObject<FbxTexture>(j);
-//				if (lTexture)
-//				{
-//					//display connected Material header only at the first time
-//					if (pDisplayHeader) {
-//						DisplayInt("    Textures connected to Material ", pMaterialIndex);
-//						pDisplayHeader = false;
-//					}
-//
-//					DisplayString("    Textures for ", pProperty.GetName());
-//					DisplayInt("        Texture ", j);
-//					DisplayTextureInfo(lTexture, -1);
-//				}
-//			}
-//		}
-//	}//end if pProperty
-//
-//}
+void FindAndDisplayTextureInfoByProperty(FbxProperty pProperty, bool& pDisplayHeader, int pMaterialIndex) {
+
+	if (pProperty.IsValid())
+	{
+		int lTextureCount = pProperty.GetSrcObjectCount<FbxTexture>();
+
+		for (int j = 0; j < lTextureCount; ++j)
+		{
+			//Here we have to check if it's layeredtextures, or just textures:
+			FbxLayeredTexture* lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
+			if (lLayeredTexture)
+			{
+				DisplayInt("    Layered Texture: ", j);
+				int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
+				for (int k = 0; k < lNbTextures; ++k)
+				{
+					FbxTexture* lTexture = lLayeredTexture->GetSrcObject<FbxTexture>(k);
+					if (lTexture)
+					{
+
+						if (pDisplayHeader) {
+							DisplayInt("    Textures connected to Material ", pMaterialIndex);
+							pDisplayHeader = false;
+						}
+
+						//NOTE the blend mode is ALWAYS on the LayeredTexture and NOT the one on the texture.
+						//Why is that?  because one texture can be shared on different layered textures and might
+						//have different blend modes.
+
+						FbxLayeredTexture::EBlendMode lBlendMode;
+						lLayeredTexture->GetTextureBlendMode(k, lBlendMode);
+						DisplayString("    Textures for ", pProperty.GetName());
+						DisplayInt("        Texture ", k);
+						DisplayTextureInfo(lTexture, (int)lBlendMode);
+					}
+
+				}
+			}
+			else
+			{
+				//no layered texture simply get on the property
+				FbxTexture* lTexture = pProperty.GetSrcObject<FbxTexture>(j);
+				if (lTexture)
+				{
+					//display connected Material header only at the first time
+					if (pDisplayHeader) {
+						DisplayInt("    Textures connected to Material ", pMaterialIndex);
+						pDisplayHeader = false;
+					}
+
+					DisplayString("    Textures for ", pProperty.GetName());
+					DisplayInt("        Texture ", j);
+					DisplayTextureInfo(lTexture, -1);
+				}
+			}
+		}
+	}//end if pProperty
+
+}
+
+void DisplayTextureInfo(FbxTexture* pTexture, int pBlendMode) {
+	FbxFileTexture* lFileTexture = FbxCast<FbxFileTexture>(pTexture);
+	FbxProceduralTexture* lProceduralTexture = FbxCast<FbxProceduralTexture>(pTexture);
+
+
+	DisplayString("            Name: \"", (char*)pTexture->GetName(), "\"");
+	if (lFileTexture)
+	{
+		DisplayString("            Type: File Texture");
+		DisplayString("            File Name: \"", (char*)lFileTexture->GetFileName(), "\"");
+	}
+	else if (lProceduralTexture) {
+		DisplayString("            Type: Procedural Texture");
+	}
+	DisplayDouble("            Scale U: ", pTexture->GetScaleU());
+	DisplayDouble("            Scale V: ", pTexture->GetScaleV());
+	DisplayDouble("            Translation U: ", pTexture->GetTranslationU());
+	DisplayDouble("            Translation V: ", pTexture->GetTranslationV());
+	DisplayBool("            Swap UV: ", pTexture->GetSwapUV());
+	DisplayDouble("            Rotation U: ", pTexture->GetRotationU());
+	DisplayDouble("            Rotation V: ", pTexture->GetRotationV());
+	DisplayDouble("            Rotation W: ", pTexture->GetRotationW());
+
+	const char* lAlphaSources[] = { "None", "RGB Intensity", "Black" };
+
+	DisplayString("            Alpha Source: ", lAlphaSources[pTexture->GetAlphaSource()]);
+	DisplayDouble("            Cropping Left: ", pTexture->GetCroppingLeft());
+	DisplayDouble("            Cropping Top: ", pTexture->GetCroppingTop());
+	DisplayDouble("            Cropping Right: ", pTexture->GetCroppingRight());
+	DisplayDouble("            Cropping Bottom: ", pTexture->GetCroppingBottom());
+
+	const char* lMappingTypes[] = { "Null", "Planar", "Spherical", "Cylindrical",
+		"Box", "Face", "UV", "Environment" };
+
+	DisplayString("            Mapping Type: ", lMappingTypes[pTexture->GetMappingType()]);
+
+	if (pTexture->GetMappingType() == FbxTexture::ePlanar)
+	{
+		const char* lPlanarMappingNormals[] = { "X", "Y", "Z" };
+
+		DisplayString("            Planar Mapping Normal: ", lPlanarMappingNormals[pTexture->GetPlanarMappingNormal()]);
+	}
+
+	const char* lBlendModes[] = { "Translucent", "Additive", "Modulate", "Modulate2", "Over", "Normal", "Dissolve", "Darken", "ColorBurn", "LinearBurn",
+									"DarkerColor", "Lighten", "Screen", "ColorDodge", "LinearDodge", "LighterColor", "SoftLight", "HardLight", "VividLight",
+									"LinearLight", "PinLight", "HardMix", "Difference", "Exclusion", "Substract", "Divide", "Hue", "Saturation", "Color",
+									"Luminosity", "Overlay" };
+
+	if (pBlendMode >= 0)
+		DisplayString("            Blend Mode: ", lBlendModes[pBlendMode]);
+	DisplayDouble("            Alpha: ", pTexture->GetDefaultAlpha());
+
+	if (lFileTexture)
+	{
+		const char* lMaterialUses[] = { "Model Material", "Default Material" };
+		DisplayString("            Material Use: ", lMaterialUses[lFileTexture->GetMaterialUse()]);
+	}
+
+	const char* pTextureUses[] = { "Standard", "Shadow Map", "Light Map",
+		"Spherical Reflexion Map", "Sphere Reflexion Map", "Bump Normal Map" };
+
+	DisplayString("            Texture Use: ", pTextureUses[pTexture->GetTextureUse()]);
+	DisplayString("");
+}
+
+void DisplayMaterialConnection(FbxMesh* pMesh) {
+	int i, l, lPolygonCount = pMesh->GetPolygonCount();
+
+	char header[MAT_HEADER_LENGTH];
+
+	DisplayString("    Polygons Material Connections");
+
+	//check whether the material maps with only one mesh
+	bool lIsAllSame = true;
+	for (l = 0; l < pMesh->GetElementMaterialCount(); l++) {
+		FbxGeometryElementMaterial* lMaterialElement = pMesh->GetElementMaterial(l);
+		if (lMaterialElement->GetMappingMode() == FbxGeometryElement::eByPolygon) {
+			lIsAllSame = false;
+			break;
+		}
+	}
+
+	//For eAllSame Mapping type,just out the material and texture mapping info once
+	if (lIsAllSame) {
+		for (l = 0; l < pMesh->GetElementMaterialCount(); l++) {
+			FbxGeometryElementMaterial* lMaterialElement = pMesh->GetElementMaterial(l);
+			if (lMaterialElement->GetMappingMode() == FbxGeometryElement::eAllSame)
+			{
+				FbxSurfaceMaterial* lMaterial = pMesh->GetNode()->GetMaterial(lMaterialElement->GetIndexArray().GetAt(0));
+				int lMatId = lMaterialElement->GetIndexArray().GetAt(0);
+				if (lMatId >= 0)
+				{
+					DisplayInt("        All polygons share the same material in mesh ", l);
+					DisplayMaterialTextureConnections(lMaterial, header, lMatId, l);
+				}
+			}
+		}
+
+		//no material
+		if (l == 0)
+			DisplayString("        no material applied");
+	}
+
+	//For eByPolygon mapping type, just out the material and texture mapping info once
+	else
+	{
+		for (i = 0; i < lPolygonCount; i++)
+		{
+			DisplayInt("        Polygon ", i);
+
+			for (l = 0; l < pMesh->GetElementMaterialCount(); l++)
+			{
+
+				FbxGeometryElementMaterial* lMaterialElement = pMesh->GetElementMaterial(l);
+				FbxSurfaceMaterial* lMaterial = NULL;
+				int lMatId = -1;
+				lMaterial = pMesh->GetNode()->GetMaterial(lMaterialElement->GetIndexArray().GetAt(i));
+				lMatId = lMaterialElement->GetIndexArray().GetAt(i);
+
+				if (lMatId >= 0)
+				{
+					DisplayMaterialTextureConnections(lMaterial, header, lMatId, l);
+				}
+			}
+		}
+	}
+}
+
+void DisplayMaterialTextureConnections(FbxSurfaceMaterial* pMaterial, char* header, int pMatId, int l) {
+	if (!pMaterial)
+		return;
+
+	FbxString lConnectionString = "            Material %d -- ";
+	//Show all the textures
+
+	FbxProperty lProperty;
+	//Diffuse Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuse);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//DiffuseFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sDiffuseFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Emissive Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sEmissive);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//EmissiveFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sEmissiveFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+
+	//Ambient Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sAmbient);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//AmbientFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sAmbientFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Specular Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sSpecular);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//SpecularFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sSpecularFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Shininess Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sShininess);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Bump Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sBump);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Normal Map Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sNormalMap);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Transparent Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sTransparentColor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//TransparencyFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sTransparencyFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Reflection Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sReflection);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//ReflectionFactor Textures
+	lProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sReflectionFactor);
+	DisplayTextureNames(lProperty, lConnectionString);
+
+	//Update header with material info
+	bool lStringOverflow = (lConnectionString.GetLen() + 10 >= MAT_HEADER_LENGTH); // allow for string length and some padding for "%d"
+	if (lStringOverflow)
+	{
+		// Truncate string!
+		lConnectionString = lConnectionString.Left(MAT_HEADER_LENGTH - 10);
+		lConnectionString = lConnectionString + "...";
+	}
+	FBXSDK_sprintf(header, MAT_HEADER_LENGTH, lConnectionString.Buffer(), pMatId, l);
+	DisplayString(header);
+}
+
+void DisplayTextureNames(FbxProperty& pProperty, FbxString& pConnectionString)
+{
+	int lLayeredTextureCount = pProperty.GetSrcObjectCount<FbxLayeredTexture>();
+	if (lLayeredTextureCount > 0)
+	{
+		for (int j = 0; j < lLayeredTextureCount; ++j)
+		{
+			FbxLayeredTexture* lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
+			int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
+			pConnectionString += " Texture ";
+
+			for (int k = 0; k < lNbTextures; ++k)
+			{
+				//lConnectionString += k;
+				pConnectionString += "\"";
+				pConnectionString += (char*)lLayeredTexture->GetName();
+				pConnectionString += "\"";
+				pConnectionString += " ";
+			}
+			pConnectionString += "of ";
+			pConnectionString += pProperty.GetName();
+			pConnectionString += " on layer ";
+			pConnectionString += j;
+		}
+		pConnectionString += " |";
+	}
+	else
+	{
+		//no layered texture simply get on the property
+		int lNbTextures = pProperty.GetSrcObjectCount<FbxTexture>();
+
+		if (lNbTextures > 0)
+		{
+			pConnectionString += " Texture ";
+			pConnectionString += " ";
+
+			for (int j = 0; j < lNbTextures; ++j)
+			{
+				FbxTexture* lTexture = pProperty.GetSrcObject<FbxTexture>(j);
+				if (lTexture)
+				{
+					pConnectionString += "\"";
+					pConnectionString += (char*)lTexture->GetName();
+					pConnectionString += "\"";
+					pConnectionString += " ";
+				}
+			}
+			pConnectionString += "of ";
+			pConnectionString += pProperty.GetName();
+			pConnectionString += " |";
+		}
+	}
+}
 
 void DisplayMaterial(FbxGeometry* pGeometry) {
 	int lMaterialCount = 0;
@@ -689,7 +965,7 @@ void DisplayLink(FbxGeometry* pGeometry) {
 		{
 			DisplayInt("    Cluster ", i);
 
-			lCluster = ((FbxSkin*)pGeometry->GetDeformer(i, FbxDeformer::eSkin))->GetCluster(j);  
+			lCluster = ((FbxSkin*)pGeometry->GetDeformer(i, FbxDeformer::eSkin))->GetCluster(j);
 
 			const char* lClusterModes[] = { "Normalize", "Additive", "Total1" };
 
@@ -753,6 +1029,193 @@ void DisplayLink(FbxGeometry* pGeometry) {
 	}
 
 }
+
+void DisplayShape(FbxGeometry* pGeometry) {
+	int lBlendShapeCount, lBlendShapeChannelCount, lTargetShapeCount;
+	FbxBlendShape* lBlendShape;
+	FbxBlendShapeChannel* lBlendShapeChannel;
+	FbxShape* lShape;
+
+	lBlendShapeCount = pGeometry->GetDeformerCount(FbxDeformer::eBlendShape);
+
+	for (int lBlendShapeIndex = 0; lBlendShapeIndex < lBlendShapeCount; ++lBlendShapeIndex)
+	{
+		lBlendShape = (FbxBlendShape*)pGeometry->GetDeformer(lBlendShapeIndex, FbxDeformer::eBlendShape);
+		DisplayString("    BlendShape ", (char*)lBlendShape->GetName());
+
+		lBlendShapeChannelCount = lBlendShape->GetBlendShapeChannelCount();
+		for (int lBlendShapeChannelIndex = 0; lBlendShapeChannelIndex < lBlendShapeChannelCount; ++lBlendShapeChannelIndex)
+		{
+			lBlendShapeChannel = lBlendShape->GetBlendShapeChannel(lBlendShapeChannelIndex);
+			DisplayString("    BlendShapeChannel ", (char*)lBlendShapeChannel->GetName());
+			DisplayDouble("    Default Deform Value: ", lBlendShapeChannel->DeformPercent.Get());
+
+			lTargetShapeCount = lBlendShapeChannel->GetTargetShapeCount();
+			for (int lTargetShapeIndex = 0; lTargetShapeIndex < lTargetShapeCount; ++lTargetShapeIndex)
+			{
+				lShape = lBlendShapeChannel->GetTargetShape(lTargetShapeIndex);
+				DisplayString("    TargetShape ", (char*)lShape->GetName());
+
+				int j, lControlPointsCount = lShape->GetControlPointsCount();
+				FbxVector4* lControlPoints = lShape->GetControlPoints();
+				FbxLayerElementArrayTemplate<FbxVector4>* lNormals = NULL;
+				bool lStatus = lShape->GetNormals(&lNormals);
+
+				for (j = 0; j < lControlPointsCount; j++)
+				{
+					DisplayInt("        Control Point ", j);
+					Display3DVector("            Coordinates: ", lControlPoints[j]);
+
+					if (lStatus && lNormals && lNormals->GetCount() == lControlPointsCount)
+					{
+						Display3DVector("            Normal Vector: ", lNormals->GetAt(j));
+					}
+				}
+
+				DisplayString("");
+			}
+		}
+	}
+}
+
+void DisplayCache(FbxGeometry* pGeometry) {
+	int lVertexCacheDeformerCount = pGeometry->GetDeformerCount(FbxDeformer::eVertexCache);
+
+	for (int i = 0; i < lVertexCacheDeformerCount; ++i)
+	{
+		FbxVertexCacheDeformer* lDeformer = static_cast<FbxVertexCacheDeformer*>(pGeometry->GetDeformer(i, FbxDeformer::eVertexCache));
+		if (!lDeformer) continue;
+
+		FbxCache* lCache = lDeformer->GetCache();
+		if (!lCache) continue;
+
+		if (lCache->OpenFileForRead())
+		{
+			DisplayString("    Vertex Cache");
+			int lChannelIndex = lCache->GetChannelIndex(lDeformer->Channel.Get());
+			// skip normal channel
+			if (lChannelIndex < 0)
+				continue;
+
+			FbxString lChnlName, lChnlInterp;
+
+			FbxCache::EMCDataType lChnlType;
+			FbxTime start, stop, rate;
+			FbxCache::EMCSamplingType lChnlSampling;
+			unsigned int lChnlSampleCount, lDataCount;
+
+			lCache->GetChannelName(lChannelIndex, lChnlName);
+			DisplayString("        Channel Name: ", lChnlName.Buffer());
+			lCache->GetChannelDataType(lChannelIndex, lChnlType);
+			switch (lChnlType)
+			{
+			case FbxCache::eUnknownData:
+				DisplayString("        Channel Type: Unknown Data"); break;
+			case FbxCache::eDouble:
+				DisplayString("        Channel Type: Double"); break;
+			case FbxCache::eDoubleArray:
+				DisplayString("        Channel Type: Double Array"); break;
+			case FbxCache::eDoubleVectorArray:
+				DisplayString("        Channel Type: Double Vector Array"); break;
+			case FbxCache::eInt32Array:
+				DisplayString("        Channel Type: Int32 Array"); break;
+			case FbxCache::eFloatArray:
+				DisplayString("        Channel Type: Float Array"); break;
+			case FbxCache::eFloatVectorArray:
+				DisplayString("        Channel Type: Float Vector Array"); break;
+			}
+			lCache->GetChannelInterpretation(lChannelIndex, lChnlInterp);
+			DisplayString("        Channel Interpretation: ", lChnlInterp.Buffer());
+			lCache->GetChannelSamplingType(lChannelIndex, lChnlSampling);
+			DisplayInt("        Channel Sampling Type: ", lChnlSampling);
+			lCache->GetAnimationRange(lChannelIndex, start, stop);
+			lCache->GetChannelSamplingRate(lChannelIndex, rate);
+			lCache->GetChannelSampleCount(lChannelIndex, lChnlSampleCount);
+			DisplayInt("        Channel Sample Count: ", lChnlSampleCount);
+
+			// Only display cache data if the data type is float vector array
+			if (lChnlType != FbxCache::eFloatVectorArray)
+				continue;
+
+			if (lChnlInterp == "normals")
+				DisplayString("        Normal Cache Data");
+			else
+				DisplayString("        Points Cache Data");
+			float* lBuffer = NULL;
+			unsigned int lBufferSize = 0;
+			int lFrame = 0;
+			for (FbxTime t = start; t <= stop; t += rate)
+			{
+				DisplayInt("            Frame ", lFrame);
+				lCache->GetChannelPointCount(lChannelIndex, t, lDataCount);
+				if (lBuffer == NULL)
+				{
+					lBuffer = new float[lDataCount * 3];
+					lBufferSize = lDataCount * 3;
+				}
+				else if (lBufferSize < lDataCount * 3)
+				{
+					delete[] lBuffer;
+					lBuffer = new float[lDataCount * 3];
+					lBufferSize = lDataCount * 3;
+				}
+				else
+					memset(lBuffer, 0, lBufferSize * sizeof(float));
+
+				lCache->Read(lChannelIndex, t, lBuffer, lDataCount);
+				if (lChnlInterp == "normals")
+				{
+					// display normals cache data
+					// the normal data is per-polygon per-vertex. we can get the polygon vertex index
+					// from the index array of polygon vertex
+					FbxMesh* lMesh = (FbxMesh*)pGeometry;
+
+					if (lMesh == NULL)
+					{
+						// Only Mesh can have normal cache data
+						continue;
+					}
+
+					DisplayInt("                Normal Count ", lDataCount);
+					int pi, j, lPolygonCount = lMesh->GetPolygonCount();
+					unsigned lNormalIndex = 0;
+					for (pi = 0; pi < lPolygonCount && lNormalIndex + 2 < lDataCount * 3; pi++)
+					{
+						DisplayInt("                    Polygon ", pi);
+						DisplayString("                    Normals for Each Polygon Vertex: ");
+						int lPolygonSize = lMesh->GetPolygonSize(pi);
+						for (j = 0; j < lPolygonSize && lNormalIndex + 2 < lDataCount * 3; j++)
+						{
+							FbxVector4 normal(lBuffer[lNormalIndex], lBuffer[lNormalIndex + 1], lBuffer[lNormalIndex + 2]);
+							Display3DVector("                       Normal Cache Data  ", normal);
+							lNormalIndex += 3;
+						}
+					}
+				}
+				else
+				{
+					DisplayInt("               Points Count: ", lDataCount);
+					for (unsigned int j = 0; j < lDataCount * 3; j = j + 3)
+					{
+						FbxVector4 points(lBuffer[j], lBuffer[j + 1], lBuffer[j + 2]);
+						Display3DVector("                   Points Cache Data: ", points);
+					}
+				}
+
+				lFrame++;
+			}
+
+			if (lBuffer != NULL)
+			{
+				delete[] lBuffer;
+				lBuffer = NULL;
+			}
+
+			lCache->CloseFile();
+		}
+	}
+}
+
 //For show on poly
 void DisplayPolygons(FbxMesh* pMesh) {
 	int i, j, lPolygonCount = pMesh->GetPolygonCount();
@@ -806,7 +1269,7 @@ void DisplayPolygons(FbxMesh* pMesh) {
 						int id = leVtxc->GetIndexArray().GetAt(lControlPointIndex);
 						DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
 					}
-						break;
+					break;
 					default:// other reference modes not shown here!
 						break;
 					}
@@ -824,7 +1287,7 @@ void DisplayPolygons(FbxMesh* pMesh) {
 						int id = leVtxc->GetIndexArray().GetAt(vertexId);
 						DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
 					}
-						break;
+					break;
 					default:// other reference modes not shown here!
 						break;
 					}
@@ -887,7 +1350,7 @@ void DisplayPolygons(FbxMesh* pMesh) {
 					}
 				}
 
-			}			
+			}
 			for (l = 0; l < pMesh->GetElementBinormalCount(); ++l)
 			{
 
@@ -1651,148 +2114,4 @@ void DisplayControlsPoints(FbxMesh* pMesh) {
 	}
 
 	DisplayString("");
-}
-
-
-
-//Common Used
-void DisplayMetaDataConnections(FbxObject* pObject) {
-	int nbMetaData = pObject->GetSrcObjectCount<FbxObjectMetaData>();
-	if (nbMetaData > 0)
-		DisplayString("    MetaData connections ");
-
-	for (int i = 0; i < nbMetaData; i++)
-	{
-		FbxObjectMetaData* metaData = pObject->GetSrcObject<FbxObjectMetaData>(i);
-		DisplayString("        Name: ", (char*)metaData->GetName());
-	}
-}
-
-void Display2DVector(const char* pHeader, FbxVector2 pValue, const char* pSuffix  /* = "" */)
-{
-	FbxString lString;
-	FbxString lFloatValue1 = (float)pValue[0];
-	FbxString lFloatValue2 = (float)pValue[1];
-
-	lFloatValue1 = pValue[0] <= -HUGE_VAL ? "-INFINITY" : lFloatValue1.Buffer();
-	lFloatValue1 = pValue[0] >= HUGE_VAL ? "INFINITY" : lFloatValue1.Buffer();
-	lFloatValue2 = pValue[1] <= -HUGE_VAL ? "-INFINITY" : lFloatValue2.Buffer();
-	lFloatValue2 = pValue[1] >= HUGE_VAL ? "INFINITY" : lFloatValue2.Buffer();
-
-	lString = pHeader;
-	lString += lFloatValue1;
-	lString += ", ";
-	lString += lFloatValue2;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-//Show X,Y,Z
-void Display3DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix/* = "" */) {
-	FbxString lString;
-	FbxString lFloatValue1 = (float)pValue[0];
-	FbxString lFloatValue2 = (float)pValue[1];
-	FbxString lFloatValue3 = (float)pValue[2];
-
-	lFloatValue1 = pValue[0] <= -HUGE_VAL ? "-INFINITY" : lFloatValue1.Buffer();
-	lFloatValue1 = pValue[0] >= HUGE_VAL ? "INFINITY" : lFloatValue1.Buffer();
-	lFloatValue2 = pValue[1] <= -HUGE_VAL ? "-INFINITY" : lFloatValue2.Buffer();
-	lFloatValue2 = pValue[1] >= HUGE_VAL ? "INFINITY" : lFloatValue2.Buffer();
-	lFloatValue3 = pValue[2] <= -HUGE_VAL ? "-INFINITY" : lFloatValue3.Buffer();
-	lFloatValue3 = pValue[2] >= HUGE_VAL ? "INFINITY" : lFloatValue3.Buffer();
-
-	lString = pHeader;
-	lString += lFloatValue1;
-	lString += ",";
-	lString += lFloatValue2;
-	lString += ",";
-	lString += lFloatValue3;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-void Display4DVector(const char* pHeader, FbxVector4 pValue, const char* pSuffix /* = "" */)
-{
-	FbxString lString;
-	FbxString lFloatValue1 = (float)pValue[0];
-	FbxString lFloatValue2 = (float)pValue[1];
-	FbxString lFloatValue3 = (float)pValue[2];
-	FbxString lFloatValue4 = (float)pValue[3];
-
-	lFloatValue1 = pValue[0] <= -HUGE_VAL ? "-INFINITY" : lFloatValue1.Buffer();
-	lFloatValue1 = pValue[0] >= HUGE_VAL ? "INFINITY" : lFloatValue1.Buffer();
-	lFloatValue2 = pValue[1] <= -HUGE_VAL ? "-INFINITY" : lFloatValue2.Buffer();
-	lFloatValue2 = pValue[1] >= HUGE_VAL ? "INFINITY" : lFloatValue2.Buffer();
-	lFloatValue3 = pValue[2] <= -HUGE_VAL ? "-INFINITY" : lFloatValue3.Buffer();
-	lFloatValue3 = pValue[2] >= HUGE_VAL ? "INFINITY" : lFloatValue3.Buffer();
-	lFloatValue4 = pValue[3] <= -HUGE_VAL ? "-INFINITY" : lFloatValue4.Buffer();
-	lFloatValue4 = pValue[3] >= HUGE_VAL ? "INFINITY" : lFloatValue4.Buffer();
-
-	lString = pHeader;
-	lString += lFloatValue1;
-	lString += ", ";
-	lString += lFloatValue2;
-	lString += ", ";
-	lString += lFloatValue3;
-	lString += ", ";
-	lString += lFloatValue4;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-void DisplayInt(const char* pHeader, int pValue, const char* pSuffix /* = "" */)
-{
-	FbxString lString;
-
-	lString = pHeader;
-	lString += pValue;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-void DisplayDouble(const char* pHeader, double pValue, const char* pSuffix /* = "" */) {
-	FbxString lString;
-	FbxString lFloatValue = (float)pValue;
-
-	lFloatValue = pValue <= -HUGE_VAL ? "-INFINITY" : lFloatValue.Buffer();
-	lFloatValue = pValue <= HUGE_VAL ? "INFINITY" : lFloatValue.Buffer();
-
-	lString = pHeader;
-	lString += lFloatValue;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-
-void DisplayBool(const char* pHeader, bool pValue, const char* pSuffix) {
-	FbxString lString;
-
-	lString = pHeader;
-	lString += pValue ? "True" : "False";
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
-
-void DisplayColor(const char* pHeader, FbxColor pValue, const char* pSuffix) {
-	FbxString lString;
-
-	lString = pHeader;
-	lString += (float)pValue.mRed;
-
-	lString += " (red), ";
-	lString += (float)pValue.mGreen;
-
-	lString += " (green), ";
-	lString += (float)pValue.mBlue;
-
-	lString += " (blue)";
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
 }
