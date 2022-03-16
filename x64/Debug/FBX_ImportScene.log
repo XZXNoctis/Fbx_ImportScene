@@ -1,4 +1,2 @@
 ﻿  Fbx_ImportScene.cpp
-E:\Computer graphics\Practice\Fbx_ImportScene\Fbx_ImportScene.cpp(2077,12): warning C4101: “k”: 未引用的局部变量
-E:\Computer graphics\Practice\Fbx_ImportScene\Fbx_ImportScene.cpp(2077,9): warning C4101: “j”: 未引用的局部变量
   Fbx_ImportScene.vcxproj -> E:\Computer graphics\Practice\Fbx_ImportScene\x64\Debug\Fbx_ImportScene.exe
