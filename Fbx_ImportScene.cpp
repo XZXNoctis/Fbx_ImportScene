@@ -1,5 +1,7 @@
 #include<fbxsdk.h>
 #include<fbxsdk/fileio/fbxiosettings.h>
+#include<glad.h>
+#include <glfw3.h>
 #include<iostream>
 
 //Function include
