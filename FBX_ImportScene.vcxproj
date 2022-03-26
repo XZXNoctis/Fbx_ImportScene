@@ -155,11 +155,13 @@
     <ClCompile Include="Fbx_ImportScene.cpp" />
     <ClCompile Include="GenericInfo.cpp" />
     <ClCompile Include="Global.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="Link.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Pose.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="Skeleton.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,11 +171,13 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="GenericInfo.h" />
     <ClInclude Include="Global.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Link.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Pose.h" />
     <ClInclude Include="Shape.h" />
+    <ClInclude Include="Skeleton.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

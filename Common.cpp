@@ -141,3 +141,15 @@ void DisplayColor(const char* pHeader, FbxColor pValue, const char* pSuffix) {
 	lString += "\n";
 	FBXSDK_printf(lString);
 }
+
+//Use to show string
+void DisplayString(const char* pHeader, const char* pValue /* = "" */, const char* pSuffix /* = "" */)
+{
+	FbxString lString;
+
+	lString = pHeader;
+	lString += pValue;
+	lString += pSuffix;
+	lString += "\n";
+	FBXSDK_printf(lString);
+}

@@ -11,16 +11,14 @@
 #include "Material.h"
 #include "Pose.h"
 #include "Animation.h"
+#include "Light.h"
+#include "Skeleton.h"
 #include "GenericInfo.h"
 
 #include "Link.h"
 #include "Shape.h"
 #include "Cache.h"
 
-
-//Create Fbx Sdk Manager
-//FbxManager* lSdkManager = FbxManager::Create();
-//FbxScene* lScene = FbxScene::Create(lSdkManager, "lScne");
 
 //Function Definition
 void DisplayHierarchy(FbxScene* pScene);
@@ -30,9 +28,7 @@ void DisplayContent(FbxScene* pScene);
 void DisplayContent(FbxNode* pNode);
 void DisplayMarker(FbxNode* pNode);
 void DisplayNurb(FbxNode* pNode);
-void DisplayLight(FbxNode* pNode);
 void DisplayPatch(FbxNode* pNode);
-void DisplayDefaultAnimationValues(FbxLight* pLight);
 void DisplayLodGroup(FbxNode* pNode);
 
 void DisplayUserProperties(FbxObject* pObject);
@@ -41,11 +37,11 @@ void DisplayTransformPropagation(FbxNode* pNode);
 void DisplayGeometricTransform(FbxNode* pNode);
 void DisplayPivotsAndLimits(FbxNode* pNode);
 
-
-void DisplaySkeleton(FbxNode* pNode);
-
-
 static bool gVerbose = true;
+
+//Create Fbx Sdk Manager
+//FbxManager* lSdkManager = FbxManager::Create();
+//FbxScene* lScene = FbxScene::Create(lSdkManager, "lScne");
 
 int main() {
 	//FbxManager* lSdkManager = NULL;
@@ -144,23 +140,6 @@ int main() {
 
 
 }
-
-
-////To tell the player what is this
-void DisplayMetaData(FbxScene* pScene) {
-	FbxDocumentInfo* sceneInfo = pScene->GetSceneInfo();
-	if (sceneInfo) {
-		FBXSDK_printf("SceneInfo:%s", sceneInfo->GetName());
-		FBXSDK_printf("\n\n--------------------\nMeta-Data\n--------------------\n\n");
-		FBXSDK_printf("		Title:%s\n", sceneInfo->mTitle.Buffer());
-		FBXSDK_printf("		Subject:%s\n", sceneInfo->mSubject.Buffer());
-		FBXSDK_printf("		Author:%s\n", sceneInfo->mAuthor.Buffer());
-		FBXSDK_printf("		Keywords: %s\n", sceneInfo->mKeywords.Buffer());
-		FBXSDK_printf("		Revision: %s\n", sceneInfo->mRevision.Buffer());
-		FBXSDK_printf("		Comment: %s\n", sceneInfo->mComment.Buffer());
-	}
-}
-
 
 ////For Scene
 void DisplayHierarchy(FbxScene* pScene)
@@ -528,43 +507,6 @@ void DisplayPatch(FbxNode* pNode) {
 	DisplayCache(lNurbs);
 }
 
-void DisplayLight(FbxNode* pNode)
-{
-	FbxLight* lLight = (FbxLight*)pNode->GetNodeAttribute();
-
-	DisplayString("Light Name: ", (char*)pNode->GetName());
-	DisplayMetaDataConnections(lLight);
-
-	const char* lLightTypes[] = { "Point", "Directional", "Spot", "Area", "Volume" };
-
-	DisplayString("    Type: ", lLightTypes[lLight->LightType.Get()]);
-	DisplayBool("    Cast Light: ", lLight->CastLight.Get());
-
-	if (!(lLight->FileName.Get().IsEmpty()))
-	{
-		DisplayString("    Gobo");
-
-		DisplayString("        File Name: \"", lLight->FileName.Get().Buffer(), "\"");
-		DisplayBool("        Ground Projection: ", lLight->DrawGroundProjection.Get());
-		DisplayBool("        Volumetric Projection: ", lLight->DrawVolumetricLight.Get());
-		DisplayBool("        Front Volumetric Projection: ", lLight->DrawFrontFacingVolumetricLight.Get());
-	}
-
-	DisplayDefaultAnimationValues(lLight);
-}
-
-void DisplayDefaultAnimationValues(FbxLight* pLight)
-{
-	DisplayString("    Default Animation Values");
-
-	FbxDouble3 c = pLight->Color.Get();
-	FbxColor lColor(c[0], c[1], c[2]);
-	DisplayColor("        Default Color: ", lColor);
-	DisplayDouble("        Default Intensity: ", pLight->Intensity.Get());
-	DisplayDouble("        Default Outer Angle: ", pLight->OuterAngle.Get());
-	DisplayDouble("        Default Fog: ", pLight->Fog.Get());
-}
-
 void DisplayLodGroup(FbxNode* pNode){
 	const char* lDisplayLevels[] = { "UseLOD", "Show", "Hide" };
 
@@ -913,157 +855,6 @@ void DisplayPivotsAndLimits(FbxNode* pNode) {
 }
 
 
-
-//For Skeleton
-void DisplaySkeleton(FbxNode* pNode) {
-	FbxSkeleton* lSkeleton = (FbxSkeleton*)pNode->GetNodeAttribute();
-	DisplayString("Skeleton Name: ", (char*)pNode->GetName());
-	DisplayMetaDataConnections(lSkeleton);
-
-	const char* lSkeletonTypes[] = { "Root", "Limb", "Limb Node", "Effector" };
-
-	DisplayString("    Type: ", lSkeletonTypes[lSkeleton->GetSkeletonType()]);
-
-	if (lSkeleton->GetSkeletonType() == FbxSkeleton::eLimb)
-	{
-		DisplayDouble("    Limb Length: ", lSkeleton->LimbLength.Get());
-	}
-	else if (lSkeleton->GetSkeletonType() == FbxSkeleton::eLimbNode)
-	{
-		DisplayDouble("    Limb Node Size: ", lSkeleton->Size.Get());
-	}
-	else if (lSkeleton->GetSkeletonType() == FbxSkeleton::eRoot)
-	{
-		DisplayDouble("    Limb Root Size: ", lSkeleton->Size.Get());
-	}
-
-	DisplayColor("    Color: ", lSkeleton->GetLimbNodeColor());
-}
-
-void DisplayMaterialMapping(FbxMesh* pMesh)
-{
-	const char* lMappingTypes[] = { "None", "By Control Point", "By Polygon Vertex", "By Polygon", "By Edge", "All Same" };
-	const char* lReferenceMode[] = { "Direct", "Index", "Index to Direct" };
-
-	int lMtrlCount = 0;
-	FbxNode* lNode = NULL;
-	if (pMesh) {
-		lNode = pMesh->GetNode();
-		if (lNode)
-			lMtrlCount = lNode->GetMaterialCount();
-	}
-
-	for (int l = 0; l < pMesh->GetElementMaterialCount(); l++)
-	{
-		FbxGeometryElementMaterial* leMat = pMesh->GetElementMaterial(l);
-		if (leMat)
-		{
-			char header[100];
-			FBXSDK_sprintf(header, 100, "    Material Element %d: ", l);
-			DisplayString(header);
-
-
-			DisplayString("           Mapping: ", lMappingTypes[leMat->GetMappingMode()]);
-			DisplayString("           ReferenceMode: ", lReferenceMode[leMat->GetReferenceMode()]);
-
-			int lMaterialCount = 0;
-			FbxString lString;
-
-			if (leMat->GetReferenceMode() == FbxGeometryElement::eDirect ||
-				leMat->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-			{
-				lMaterialCount = lMtrlCount;
-			}
-
-			if (leMat->GetReferenceMode() == FbxGeometryElement::eIndex ||
-				leMat->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-			{
-				int i;
-
-				lString = "           Indices: ";
-
-				int lIndexArrayCount = leMat->GetIndexArray().GetCount();
-				for (i = 0; i < lIndexArrayCount; i++)
-				{
-					lString += leMat->GetIndexArray().GetAt(i);
-
-					if (i < lIndexArrayCount - 1)
-					{
-						lString += ", ";
-					}
-				}
-
-				lString += "\n";
-
-				FBXSDK_printf(lString);
-			}
-		}
-	}
-
-	DisplayString("");
-}
-
-
-
-void DisplayTextureNames(FbxProperty& pProperty, FbxString& pConnectionString)
-{
-	int lLayeredTextureCount = pProperty.GetSrcObjectCount<FbxLayeredTexture>();
-	if (lLayeredTextureCount > 0)
-	{
-		for (int j = 0; j < lLayeredTextureCount; ++j)
-		{
-			FbxLayeredTexture* lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
-			int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
-			pConnectionString += " Texture ";
-
-			for (int k = 0; k < lNbTextures; ++k)
-			{
-				//lConnectionString += k;
-				pConnectionString += "\"";
-				pConnectionString += (char*)lLayeredTexture->GetName();
-				pConnectionString += "\"";
-				pConnectionString += " ";
-			}
-			pConnectionString += "of ";
-			pConnectionString += pProperty.GetName();
-			pConnectionString += " on layer ";
-			pConnectionString += j;
-		}
-		pConnectionString += " |";
-	}
-	else
-	{
-		//no layered texture simply get on the property
-		int lNbTextures = pProperty.GetSrcObjectCount<FbxTexture>();
-
-		if (lNbTextures > 0)
-		{
-			pConnectionString += " Texture ";
-			pConnectionString += " ";
-
-			for (int j = 0; j < lNbTextures; ++j)
-			{
-				FbxTexture* lTexture = pProperty.GetSrcObject<FbxTexture>(j);
-				if (lTexture)
-				{
-					pConnectionString += "\"";
-					pConnectionString += (char*)lTexture->GetName();
-					pConnectionString += "\"";
-					pConnectionString += " ";
-				}
-			}
-			pConnectionString += "of ";
-			pConnectionString += pProperty.GetName();
-			pConnectionString += " |";
-		}
-	}
-}
-
-
-
-
-
-
 //For show on poly
 void DisplayPolygons(FbxMesh* pMesh) {
 	int i, j, lPolygonCount = pMesh->GetPolygonCount();
@@ -1256,36 +1047,5 @@ void DisplayPolygons(FbxMesh* pMesh) {
 
 
 
-//Use to show string
-void DisplayString(const char* pHeader, const char* pValue /* = "" */, const char* pSuffix /* = "" */)
-{
-	FbxString lString;
 
-	lString = pHeader;
-	lString += pValue;
-	lString += pSuffix;
-	lString += "\n";
-	FBXSDK_printf(lString);
-}
 
-void DisplayControlsPoints(FbxMesh* pMesh) {
-	int i, lControlPointsCount = pMesh->GetControlPointsCount();
-	FbxVector4* lControlPoints = pMesh->GetControlPoints();
-	DisplayString("	Control Points");
-	for (i = 0; i < lControlPointsCount; i++) {
-		DisplayInt("		Control Point", i);
-		Display3DVector("            Coordinates: ", lControlPoints[i]);
-		for (int j = 0; j < pMesh->GetElementNormalCount(); j++) {
-			FbxGeometryElementNormal* leNormals = pMesh->GetElementNormal(j);
-			if (leNormals->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-			{
-				char header[100];
-				FBXSDK_sprintf(header, 100, "            Normal Vector: ");
-				if (leNormals->GetReferenceMode() == FbxGeometryElement::eDirect)
-					Display3DVector(header, leNormals->GetDirectArray().GetAt(i));
-			}
-		}
-	}
-
-	DisplayString("");
-}
